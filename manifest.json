@@ -1,0 +1,10 @@
+{
+  "provides": "cityhash",
+  "targets": {
+    "cityhash": {
+      "version": "1.0.0",
+      "languages": ["c3"]
+    }
+  },
+  "dependencies": {}
+}
