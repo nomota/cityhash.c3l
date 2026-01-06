@@ -1,0 +1,22 @@
+module cityhash;
+
+// Type definitions
+def Uint128 = uint128;
+
+// Helper macros
+macro uint128_low64(x) => (ulong)(x & 0xFFFFFFFFFFFFFFFF);
+macro uint128_high64(x) => (ulong)(x >> 64);
+
+// Main hash functions
+extern fn ulong CityHash64(char* buf, usz len) @export;
+extern fn ulong CityHash64WithSeed(char* buf, usz len, ulong seed) @export;
+extern fn ulong CityHash64WithSeeds(char* buf, usz len, ulong seed0, ulong seed1) @export;
+extern fn uint128 CityHash128(char* s, usz len) @export;
+extern fn uint128 CityHash128WithSeed(char* s, usz len, uint128 seed) @export;
+
+// Internal helper functions (exposed for advanced usage)
+extern fn ulong fetch64(char* p) @inline;
+extern fn uint fetch32(char* p) @inline;
+extern fn ulong rotate(ulong val, int shift) @inline;
+extern fn ulong shift_mix(ulong val) @inline;
+extern fn ulong hash_len16(ulong u, ulong v) @inline;
