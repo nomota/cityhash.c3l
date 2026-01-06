@@ -96,9 +96,9 @@ fn uint128 cityhash::CityHash128WithSeed(char* s, usz len, uint128 seed);
 
 ### CityHashCrc (requires SSE4.2)
 ```c3
-fn uint128 city::CityHashCrc128(char* s, usz len);
-fn uint128 cityhash::CityHashCrc128WithSeed(char* s, usz len, uint128 seed);
-fn void cityhash::CityHashCrc256(char* s, usz len, ulong* result);
+fn uint128 cityhashcrc::CityHashCrc128(char* s, usz len);
+fn uint128 cityhashcrc::CityHashCrc128WithSeed(char* s, usz len, uint128 seed);
+fn void cityhashcrc::CityHashCrc256(char* s, usz len, ulong* result);
 ```
 
 ## Usage Example
