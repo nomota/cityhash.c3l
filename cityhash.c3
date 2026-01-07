@@ -57,11 +57,11 @@ fn uint unaligned_load32(char* p) @inline
 }
 
 // Byte order handling
-$if env::LITTLE_ENDIAN:
-    macro uint32_in_expected_order(x) => x;
-    macro uint64_in_expected_order(x) => x;
-$else
-    fn uint bswap_32(uint x) @inline
+// $if env::LITTLE_ENDIAN:
+    macro uint32_in_expected_order(x) @if (! envd::BIG_ENDIAN) => x;
+    macro uint64_in_expected_order(x) @if (! env::BIG_ENDIAN) => x;
+// $else
+    fn uint bswap_32(uint x) @if (env::BIG_ENDIAN) @inline
     {
         return ((x & 0x000000FF) << 24) |
                ((x & 0x0000FF00) << 8) |
@@ -69,7 +69,7 @@ $else
                ((x & 0xFF000000) >> 24);
     }
     
-    fn ulong bswap_64(ulong x) @inline
+    fn ulong bswap_64(ulong x) @if (env::BIG_ENDIAN) @inline
     {
         return ((x & 0x00000000000000FF) << 56) |
                ((x & 0x000000000000FF00) << 40) |
@@ -81,9 +81,9 @@ $else
                ((x & 0xFF00000000000000) >> 56);
     }
     
-    macro uint32_in_expected_order(x) => bswap_32(x);
-    macro uint64_in_expected_order(x) => bswap_64(x);
-$endif
+    macro uint32_in_expected_order(x) @if (env::BIG_ENDIAN) => bswap_32(x);
+    macro uint64_in_expected_order(x) @if (env::BIG_ENDIAN) => bswap_64(x);
+// $endif
 
 fn ulong fetch64(char* p) @inline
 {
