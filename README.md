@@ -21,30 +21,29 @@ $ cd c3l
 $ sudo make install
 
 # At your C3 project dir (initiated by "c3c init")
-$ c3l fetch https://github.com/nomota/cityhash.c3l
-# This command downloads cityhash library into ./lib dir as a zip compressed file
+$ c3l fetch https://github.com/nomota/city.c3l
+# This command downloads CityHash library into ./lib dir as a zip compressed file
 # This command adds dependancy in project.json
 ```
 
-3. Import in your code:
+### Import in your code:
 ```c3
-import cityhash;
+import city;
 ```
-
-For detailed vendor usage, see [VENDOR.md](VENDOR.md).
 
 ## Features
 
-- **CityHash64**: Fast 64-bit hash function
-- **CityHash128**: 128-bit hash function, optimized for strings > 2000 bytes
-- **CityHashCrc**: Variants using SSE4.2 CRC32 instructions (requires SSE4.2 support)
+- **city::hash64**: Fast 64-bit hash function
+- **city::hash128**: 128-bit hash function, optimized for strings > 2000 bytes
+- **city::hash64_crc**: Variants using SSE4.2 CRC32 instructions (requires SSE4.2 support)
 
 ## Files
 
-- `cityhash.c3` - Main CityHash implementation (64-bit and 128-bit variants)
-- `cityhashcrc.c3` - CRC-based variants requiring SSE4.2 (optional)
+- `city.c3` - Main CityHash implementation (64-bit and 128-bit variants)
+- `citycrc.c3` - CRC-based variants requiring SSE4.2 (optional)
 - `example.c3` - Example usage and test cases
 - `project.json` - C3 project configuration
+-`manifest.json`
 
 ## Key Differences from C
 
@@ -61,21 +60,21 @@ The C3 implementation includes several modernizations:
 
 ### CityHash64
 ```c3
-fn ulong cityhash::CityHash64(char* buf, usz len);
-fn ulong cityhash::CityHash64WithSeed(char* buf, usz len, ulong seed);
-fn ulong cityhash::CityHash64WithSeeds(char* buf, usz len, ulong seed0, ulong seed1);
+fn ulong city::hash64(char* buf, usz len);
+fn ulong city::hash64_with_seed(char* buf, usz len, ulong seed);
+fn ulong city::hash64_with_seeds(char* buf, usz len, ulong seed0, ulong seed1);
 ```
 
 ### CityHash128
 ```c3
-fn uint128 cityhash::CityHash128(char* s, usz len);
-fn uint128 cityhash::CityHash128WithSeed(char* s, usz len, uint128 seed);
+fn uint128 city::hash128(char* s, usz len);
+fn uint128 city::hash128_with_seed(char* s, usz len, uint128 seed);
 ```
 
 ### CityHashCrc (requires SSE4.2)
 ```c3
-fn uint128 cityhashcrc::CityHashCrc128(char* s, usz len);
-fn uint128 cityhashcrc::CityHashCrc128WithSeed(char* s, usz len, uint128 seed);
+fn uint128 city::hash128_crc(char* s, usz len);
+fn uint128 city::hash128_crcWithSeed(char* s, usz len, uint128 seed);
 fn void cityhashcrc::CityHashCrc256(char* s, usz len, ulong* result);
 ```
 
