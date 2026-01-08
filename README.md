@@ -4,48 +4,26 @@ This is a C3 language port of Google's CityHash, a family of fast hash functions
 
 ## About CityHash
 
-CityHash provides hash functions for byte arrays (strings). On x86-64 hardware, CityHash64() is faster than other high-quality hash functions due to higher instruction-level parallelism.
+CityHash provides hash functions for byte arrays (strings). On x86-64 hardware, `city::hash64()` is faster than other high-quality hash functions due to higher instruction-level parallelism.
 
 **Important**: Functions in the CityHash family are **NOT suitable for cryptography**.
 
 ## Installation
 
-### Using C3 Vendor (Recommended)
+### Using C3 library manager (Recommended)
 
-Add CityHash to your project using the C3 vendor system:
+Add CityHash to your project using the C3 library manager:
 
 ```bash
-# From Git repository (once published)
-c3c vendor fetch cityhash --url https://github.com/nomota/cityhash-c3.git
+# Install "c3l" library manager
+$ git clone https://github.com/konimarti/c3l
+$ cd c3l
+$ sudo make install
 
-# Or add to your project.json
-{
-  "dependencies": {
-    "cityhash": {
-      "git": "https://github.com/nomota/cityhash-c3.git",
-      "tag": "v1.0.0"
-    }
-  }
-}
-```
-
-### Manual Installation
-
-1. Copy the library files to your project:
-```bash
-$ mkdir -p vendor/cityhash
-$ cp cityhash.c3 cityhash.c3i manifest.json vendor/cityhash/
-```
-
-2. Add to your `project.json`:
-```json
-{
-  "dependencies": {
-    "cityhash": {
-      "path": "./vendor/cityhash"
-    }
-  }
-}
+# At your C3 project dir (initiated by "c3c init")
+$ c3l fetch https://github.com/nomota/cityhash.c3l
+# This command downloads cityhash library into ./lib dir as a zip compressed file
+# This command adds dependancy in project.json
 ```
 
 3. Import in your code:

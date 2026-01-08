@@ -23,13 +23,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-module cityhash;
+module city;
 
 import std::io;
+import libc;
 
 // Type definitions
 typedef Uint128 = uint128;
-
 
 // Constants - some primes between 2^63 and 2^64 for various uses
 const ulong K0 = 0xc3a5c85c97cb3127;
@@ -58,7 +58,7 @@ fn uint unaligned_load32(char* p) @inline
 
 // Byte order handling
 // $if env::LITTLE_ENDIAN:
-    macro uint32_in_expected_order(x) @if (! envd::BIG_ENDIAN) => x;
+    macro uint32_in_expected_order(x) @if (! env::BIG_ENDIAN) => x;
     macro uint64_in_expected_order(x) @if (! env::BIG_ENDIAN) => x;
 // $else
     fn uint bswap_32(uint x) @if (env::BIG_ENDIAN) @inline
@@ -87,21 +87,21 @@ fn uint unaligned_load32(char* p) @inline
 
 fn ulong fetch64(char* p) @inline
 {
-    return uint64_in_expected_order!(unaligned_load64(p));
+    return uint64_in_expected_order(unaligned_load64(p));
 }
 
 fn uint fetch32(char* p) @inline
 {
-    return uint32_in_expected_order!(unaligned_load32(p));
+    return uint32_in_expected_order(unaligned_load32(p));
 }
 
 // Hash 128 input bits down to 64 bits of output
 fn ulong hash128to64(uint128 x) @inline
 {
     const ulong K_MUL = 0x9ddfea08eb382d69;
-    ulong a = (uint128_low64!(x) ^ uint128_high64!(x)) * K_MUL;
+    ulong a = (uint128_low64(x) ^ uint128_high64(x)) * K_MUL;
     a ^= (a >> 47);
-    ulong b = (uint128_high64!(x) ^ a) * K_MUL;
+    ulong b = (uint128_high64(x) ^ a) * K_MUL;
     b ^= (b >> 47);
     b *= K_MUL;
     return b;
@@ -213,7 +213,7 @@ fn ulong hash_len33to64(char* s, usz len)
 }
 
 // Main CityHash64 function
-fn ulong city_hash64(char* s, usz len)
+fn ulong hash64(char* s, usz len)
 {
     if (len <= 32) {
         if (len <= 16) {
@@ -235,15 +235,15 @@ fn ulong city_hash64(char* s, usz len)
     x = x * K1 + fetch64(s);
     
     // Decrease len to the nearest multiple of 64, and operate on 64-byte chunks
-    len = (len - 1) & ~(usz)63;
+    len = (len - 1) & ~63;
     do {
-        x = rotate(x + y + uint128_low64!(v) + fetch64(s + 8), 37) * K1;
-        y = rotate(y + uint128_high64!(v) + fetch64(s + 48), 42) * K1;
-        x ^= uint128_high64!(w);
-        y += uint128_low64!(v) + fetch64(s + 40);
-        z = rotate(z + uint128_low64!(w), 33) * K1;
-        v = weak_hash_len32_with_seeds(s, uint128_high64!(v) * K1, x + uint128_low64!(w));
-        w = weak_hash_len32_with_seeds(s + 32, z + uint128_high64!(w), y + fetch64(s + 16));
+        x = rotate(x + y + uint128_low64(v) + fetch64(s + 8), 37) * K1;
+        y = rotate(y + uint128_high64(v) + fetch64(s + 48), 42) * K1;
+        x ^= uint128_high64(w);
+        y += uint128_low64(v) + fetch64(s + 40);
+        z = rotate(z + uint128_low64(w), 33) * K1;
+        v = weak_hash_len32_with_seeds(s, uint128_high64(v) * K1, x + uint128_low64(w));
+        w = weak_hash_len32_with_seeds(s + 32, z + uint128_high64(w), y + fetch64(s + 16));
         
         // Swap z and x
         ulong temp = z;
@@ -254,26 +254,26 @@ fn ulong city_hash64(char* s, usz len)
         len -= 64;
     } while (len != 0);
     
-    return hash_len16(hash_len16(uint128_low64!(v), uint128_low64!(w)) + shift_mix(y) * K1 + z,
-                      hash_len16(uint128_high64!(v), uint128_high64!(w)) + x);
+    return hash_len16(hash_len16(uint128_low64(v), uint128_low64(w)) + shift_mix(y) * K1 + z,
+                      hash_len16(uint128_high64(v), uint128_high64(w)) + x);
 }
 
-fn ulong city_hash64_with_seed(char* s, usz len, ulong seed)
+fn ulong hash64_with_seed(char* s, usz len, ulong seed)
 {
-    return city_hash64_with_seeds(s, len, K2, seed);
+    return hash64_with_seeds(s, len, K2, seed);
 }
 
-fn ulong city_hash64_with_seeds(char* s, usz len, ulong seed0, ulong seed1)
+fn ulong hash64_with_seeds(char* s, usz len, ulong seed0, ulong seed1)
 {
-    return hash_len16(city_hash64(s, len) - seed0, seed1);
+    return hash_len16(hash64(s, len) - seed0, seed1);
 }
 
 // A subroutine for CityHash128(). Returns a decent 128-bit hash for strings
 // of any length representable in signed long. Based on City and Murmur.
 fn uint128 city_murmur(char* s, usz len, uint128 seed)
 {
-    ulong a = uint128_low64!(seed);
-    ulong b = uint128_high64!(seed);
+    ulong a = uint128_low64(seed);
+    ulong b = uint128_high64(seed);
     ulong c = 0;
     ulong d = 0;
     long l = (long)len - 16;
@@ -306,7 +306,7 @@ fn uint128 city_murmur(char* s, usz len, uint128 seed)
     return ((uint128)second << 64) | (uint128)first;
 }
 
-fn uint128 city_hash128_with_seed(char* s, usz len, uint128 seed)
+fn uint128 hash128_with_seed(char* s, usz len, uint128 seed)
 {
     if (len < 128) {
         return city_murmur(s, len, seed);
@@ -315,8 +315,8 @@ fn uint128 city_hash128_with_seed(char* s, usz len, uint128 seed)
     // We expect len >= 128 to be the common case. Keep 56 bytes of state:
     // v, w, x, y, and z.
     uint128 v, w;
-    ulong x = uint128_low64!(seed);
-    ulong y = uint128_high64!(seed);
+    ulong x = uint128_low64(seed);
+    ulong y = uint128_high64(seed);
     ulong z = len * K1;
     
     ulong vf = rotate(y ^ K1, 49) * K1 + fetch64(s);
@@ -329,26 +329,26 @@ fn uint128 city_hash128_with_seed(char* s, usz len, uint128 seed)
     
     // This is the same inner loop as CityHash64(), manually unrolled
     do {
-        x = rotate(x + y + uint128_low64!(v) + fetch64(s + 8), 37) * K1;
-        y = rotate(y + uint128_high64!(v) + fetch64(s + 48), 42) * K1;
-        x ^= uint128_high64!(w);
-        y += uint128_low64!(v) + fetch64(s + 40);
-        z = rotate(z + uint128_low64!(w), 33) * K1;
-        v = weak_hash_len32_with_seeds(s, uint128_high64!(v) * K1, x + uint128_low64!(w));
-        w = weak_hash_len32_with_seeds(s + 32, z + uint128_high64!(w), y + fetch64(s + 16));
+        x = rotate(x + y + uint128_low64(v) + fetch64(s + 8), 37) * K1;
+        y = rotate(y + uint128_high64(v) + fetch64(s + 48), 42) * K1;
+        x ^= uint128_high64(w);
+        y += uint128_low64(v) + fetch64(s + 40);
+        z = rotate(z + uint128_low64(w), 33) * K1;
+        v = weak_hash_len32_with_seeds(s, uint128_high64(v) * K1, x + uint128_low64(w));
+        w = weak_hash_len32_with_seeds(s + 32, z + uint128_high64(w), y + fetch64(s + 16));
         
         ulong temp = z;
         z = x;
         x = temp;
         s += 64;
         
-        x = rotate(x + y + uint128_low64!(v) + fetch64(s + 8), 37) * K1;
-        y = rotate(y + uint128_high64!(v) + fetch64(s + 48), 42) * K1;
-        x ^= uint128_high64!(w);
-        y += uint128_low64!(v) + fetch64(s + 40);
-        z = rotate(z + uint128_low64!(w), 33) * K1;
-        v = weak_hash_len32_with_seeds(s, uint128_high64!(v) * K1, x + uint128_low64!(w));
-        w = weak_hash_len32_with_seeds(s + 32, z + uint128_high64!(w), y + fetch64(s + 16));
+        x = rotate(x + y + uint128_low64(v) + fetch64(s + 8), 37) * K1;
+        y = rotate(y + uint128_high64(v) + fetch64(s + 48), 42) * K1;
+        x ^= uint128_high64(w);
+        y += uint128_low64(v) + fetch64(s + 40);
+        z = rotate(z + uint128_low64(w), 33) * K1;
+        v = weak_hash_len32_with_seeds(s, uint128_high64(v) * K1, x + uint128_low64(w));
+        w = weak_hash_len32_with_seeds(s + 32, z + uint128_high64(w), y + fetch64(s + 16));
         
         temp = z;
         z = x;
@@ -357,53 +357,53 @@ fn uint128 city_hash128_with_seed(char* s, usz len, uint128 seed)
         len -= 128;
     } while (len >= 128);
     
-    x += rotate(uint128_low64!(v) + z, 49) * K0;
-    z += rotate(uint128_low64!(w), 37) * K0;
+    x += rotate(uint128_low64(v) + z, 49) * K0;
+    z += rotate(uint128_low64(w), 37) * K0;
     
     // If 0 < len < 128, hash up to 4 chunks of 32 bytes each from the end of s
     usz tail_done = 0;
     while (tail_done < len) {
         tail_done += 32;
-        y = rotate(x + y, 42) * K0 + uint128_high64!(v);
+        y = rotate(x + y, 42) * K0 + uint128_high64(v);
         
-        ulong wf_new = uint128_low64!(w) + fetch64(s + len - tail_done + 16);
-        w = ((uint128)uint128_high64!(w) << 64) | (uint128)wf_new;
+        ulong wf_new = uint128_low64(w) + fetch64(s + len - tail_done + 16);
+        w = ((uint128)uint128_high64(w) << 64) | (uint128)wf_new;
         
-        x = x * K0 + uint128_low64!(w);
-        z += uint128_high64!(w) + fetch64(s + len - tail_done);
+        x = x * K0 + uint128_low64(w);
+        z += uint128_high64(w) + fetch64(s + len - tail_done);
         
-        ulong ws_new = uint128_high64!(w) + uint128_low64!(v);
-        w = ((uint128)ws_new << 64) | (uint128)uint128_low64!(w);
+        ulong ws_new = uint128_high64(w) + uint128_low64(v);
+        w = ((uint128)ws_new << 64) | (uint128)uint128_low64(w);
         
-        v = weak_hash_len32_with_seeds(s + len - tail_done, uint128_low64!(v) + z, uint128_high64!(v));
+        v = weak_hash_len32_with_seeds(s + len - tail_done, uint128_low64(v) + z, uint128_high64(v));
     }
     
     // At this point our 56 bytes of state should contain more than
     // enough information for a strong 128-bit hash. We use two
     // different 56-byte-to-8-byte hashes to get a 16-byte final result.
-    x = hash_len16(x, uint128_low64!(v));
-    y = hash_len16(y + z, uint128_low64!(w));
+    x = hash_len16(x, uint128_low64(v));
+    y = hash_len16(y + z, uint128_low64(w));
     
-    ulong first = hash_len16(x + uint128_high64!(v), uint128_high64!(w)) + y;
-    ulong second = hash_len16(x + uint128_high64!(w), y + uint128_high64!(v));
+    ulong first = hash_len16(x + uint128_high64(v), uint128_high64(w)) + y;
+    ulong second = hash_len16(x + uint128_high64(w), y + uint128_high64(v));
     return ((uint128)second << 64) | (uint128)first;
 }
 
-fn uint128 city_hash128(char* s, usz len)
+fn uint128 hash128(char* s, usz len)
 {
     if (len >= 16) {
         ulong first = fetch64(s) ^ K3;
         ulong second = fetch64(s + 8);
         uint128 r = ((uint128)second << 64) | (uint128)first;
-        return city_hash128_with_seed(s + 16, len - 16, r);
+        return hash128_with_seed(s + 16, len - 16, r);
     } else if (len >= 8) {
         ulong first = fetch64(s) ^ (len * K0);
         ulong second = fetch64(s + len - 8) ^ K1;
         uint128 r = ((uint128)second << 64) | (uint128)first;
-        return city_hash128_with_seed(null, 0, r);
+        return hash128_with_seed(null, 0, r);
     } else {
         uint128 r = ((uint128)K1 << 64) | (uint128)K0;
-        return city_hash128_with_seed(s, len, r);
+        return hash128_with_seed(s, len, r);
     }
 }
 

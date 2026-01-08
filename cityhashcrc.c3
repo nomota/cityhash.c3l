@@ -1,36 +1,58 @@
-// cityhashcrc.c3
+// citycrc.c3
 //
 // CityHashCrc implementation in C3 (requires SSE4.2)
-// Translated from cityhash-c
+// Translated from city-c
 // Copyright (c) 2011-2012, Alexander Nusov
 // Original copyright (c) 2011 Google, Inc.
 //
 // This file declares the subset of the CityHash functions that require
-// _mm_crc32_u64(). See the CityHash README for details.
+// _mm_mm_crc32_u64(). See the CityHash README for details.
 //
 // Functions in the CityHash family are not suitable for cryptography.
 
-module cityhash;
+module city;
 
-import cityhash;
 import std::io;
+import libc;
 
-// Note: This module requires SSE4.2 support
-// Compile with: -target x86_64 --feature sse4.2
+fn ulong _mm_crc32_u64(ulong crc, ulong val) 
+    @if($defined(env::SSE4_2)) @inline
+{
+    io::printfn("SSE4_2 _mm_crc32_u64() not properly implemented");
+    // todo:
+    // how to transfer parameter and fetch return val????
+  asm {
+    // CRC32 r64, r/m64
+    // ; rax: crc val store, rbx: data store
+    // crc32  rax, rbx    ; rax = crc32(rax, rbx)
+    // crc32 rax, QWORD PTR [rdx]  ; fetch 8 bytes from rdx address and compute CRC
+  }
+    return 0;
+}
 
-$if env::X86_64 && env::SSE4_2:
+fn ulong _mm_crc32_u64(ulong crc, ulong data)
+    @if(! $defined(env::SSE4_2)) @inline
+{
+    for (int i = 0; i < 64; i++) {
+        if ((crc ^ data) & 0x80000000) {
+            crc = (crc << 1) ^ 0x1EDC6F41; 
+        } else {
+            crc <<= 1;
+        }
+        data <<= 1;
+    }
+    return crc;
+}
 
-// Intrinsic function declarations for SSE4.2 CRC32 instructions
-extern fn ulong @crc32_u64(ulong crc, ulong value) @builtin;
 
 // Requires len >= 240
-fn void city_hash_crc256_long(char* s, usz len, uint seed, ulong* result)
+fn void hash256_crc_long(char* s, usz len, uint seed, ulong* result)
 {
-    ulong a = cityhash::fetch64(s + 56) + cityhash::K0;
-    ulong b = cityhash::fetch64(s + 96) + cityhash::K0;
-    ulong c = result[0] = cityhash::hash_len16(b, len);
-    ulong d = result[1] = cityhash::fetch64(s + 120) * cityhash::K0 + len;
-    ulong e = cityhash::fetch64(s + 184) + seed;
+    ulong a = city::fetch64(s + 56) + city::K0;
+    ulong b = city::fetch64(s + 96) + city::K0;
+    ulong c = result[0] = city::hash_len16(b, len);
+    ulong d = result[1] = city::fetch64(s + 120) * city::K0 + len;
+    ulong e = city::fetch64(s + 184) + seed;
     ulong f = seed;
     ulong g = 0;
     ulong h = 0;
@@ -45,22 +67,22 @@ fn void city_hash_crc256_long(char* s, usz len, uint seed, ulong* result)
     while (iters > 0) {
         // Macro-like inline block repeated 6 times
         for (int chunk_idx = 0; chunk_idx < 6; chunk_idx++) {
-            ulong multiplier = (chunk_idx % 2 == 0) ? 1 : cityhash::K0;
+            ulong multiplier = (chunk_idx % 2 == 0) ? 1 : city::K0;
             int z = (chunk_idx % 2 == 0) ? 1 : 0;
             
             ulong old_a = a;
-            a = cityhash::rotate(b, 41 ^ z) * multiplier + cityhash::fetch64(s);
-            b = cityhash::rotate(c, 27 ^ z) * multiplier + cityhash::fetch64(s + 8);
-            c = cityhash::rotate(d, 41 ^ z) * multiplier + cityhash::fetch64(s + 16);
-            d = cityhash::rotate(e, 33 ^ z) * multiplier + cityhash::fetch64(s + 24);
-            e = cityhash::rotate(t, 25 ^ z) * multiplier + cityhash::fetch64(s + 32);
+            a = city::rotate(b, 41 ^ z) * multiplier + city::fetch64(s);
+            b = city::rotate(c, 27 ^ z) * multiplier + city::fetch64(s + 8);
+            c = city::rotate(d, 41 ^ z) * multiplier + city::fetch64(s + 16);
+            d = city::rotate(e, 33 ^ z) * multiplier + city::fetch64(s + 24);
+            e = city::rotate(t, 25 ^ z) * multiplier + city::fetch64(s + 32);
             t = old_a;
             
-            f = @crc32_u64(f, a);
-            g = @crc32_u64(g, b);
-            h = @crc32_u64(h, c);
-            i = @crc32_u64(i, d);
-            j = @crc32_u64(j, e);
+            f = _mm_crc32_u64(f, a);
+            g = _mm_crc32_u64(g, b);
+            h = _mm_crc32_u64(h, c);
+            i = _mm_crc32_u64(i, d);
+            j = _mm_crc32_u64(j, e);
             s += 40;
         }
         iters--;
@@ -68,18 +90,18 @@ fn void city_hash_crc256_long(char* s, usz len, uint seed, ulong* result)
     
     while (len >= 40) {
         ulong old_a = a;
-        a = cityhash::rotate(b, 41) * cityhash::K0 + cityhash::fetch64(s);
-        b = cityhash::rotate(c, 27) * cityhash::K0 + cityhash::fetch64(s + 8);
-        c = cityhash::rotate(d, 41) * cityhash::K0 + cityhash::fetch64(s + 16);
-        d = cityhash::rotate(e, 33) * cityhash::K0 + cityhash::fetch64(s + 24);
-        e = cityhash::rotate(t, 25) * cityhash::K0 + cityhash::fetch64(s + 32);
+        a = city::rotate(b, 41) * city::K0 + city::fetch64(s);
+        b = city::rotate(c, 27) * city::K0 + city::fetch64(s + 8);
+        c = city::rotate(d, 41) * city::K0 + city::fetch64(s + 16);
+        d = city::rotate(e, 33) * city::K0 + city::fetch64(s + 24);
+        e = city::rotate(t, 25) * city::K0 + city::fetch64(s + 32);
         t = old_a;
         
-        f = @crc32_u64(f, a);
-        g = @crc32_u64(g, b);
-        h = @crc32_u64(h, c);
-        i = @crc32_u64(i, d);
-        j = @crc32_u64(j, e);
+        f = _mm_crc32_u64(f, a);
+        g = _mm_crc32_u64(g, b);
+        h = _mm_crc32_u64(h, c);
+        i = _mm_crc32_u64(i, d);
+        j = _mm_crc32_u64(j, e);
         s += 40;
         len -= 40;
     }
@@ -87,84 +109,80 @@ fn void city_hash_crc256_long(char* s, usz len, uint seed, ulong* result)
     if (len > 0) {
         s = s + len - 40;
         ulong old_a = a;
-        a = cityhash::rotate(b, 41) * cityhash::K0 + cityhash::fetch64(s);
-        b = cityhash::rotate(c, 27) * cityhash::K0 + cityhash::fetch64(s + 8);
-        c = cityhash::rotate(d, 41) * cityhash::K0 + cityhash::fetch64(s + 16);
-        d = cityhash::rotate(e, 33) * cityhash::K0 + cityhash::fetch64(s + 24);
-        e = cityhash::rotate(t, 25) * cityhash::K0 + cityhash::fetch64(s + 32);
+        a = city::rotate(b, 41) * city::K0 + city::fetch64(s);
+        b = city::rotate(c, 27) * city::K0 + city::fetch64(s + 8);
+        c = city::rotate(d, 41) * city::K0 + city::fetch64(s + 16);
+        d = city::rotate(e, 33) * city::K0 + city::fetch64(s + 24);
+        e = city::rotate(t, 25) * city::K0 + city::fetch64(s + 32);
         t = old_a;
         
-        f = @crc32_u64(f, a);
-        g = @crc32_u64(g, b);
-        h = @crc32_u64(h, c);
-        i = @crc32_u64(i, d);
-        j = @crc32_u64(j, e);
+        f = _mm_crc32_u64(f, a);
+        g = _mm_crc32_u64(g, b);
+        h = _mm_crc32_u64(h, c);
+        i = _mm_crc32_u64(i, d);
+        j = _mm_crc32_u64(j, e);
     }
     
     j += i << 32;
-    a = cityhash::hash_len16(a, j);
+    a = city::hash_len16(a, j);
     h += g << 32;
     b += h;
-    c = cityhash::hash_len16(c, f) + i;
-    d = cityhash::hash_len16(d, e + result[0]);
+    c = city::hash_len16(c, f) + i;
+    d = city::hash_len16(d, e + result[0]);
     j += e;
-    i += cityhash::hash_len16(h, t);
-    e = cityhash::hash_len16(a, d) + j;
-    f = cityhash::hash_len16(b, c) + a;
-    g = cityhash::hash_len16(j, i) + c;
+    i += city::hash_len16(h, t);
+    e = city::hash_len16(a, d) + j;
+    f = city::hash_len16(b, c) + a;
+    g = city::hash_len16(j, i) + c;
     result[0] = e + f + g + h;
-    a = cityhash::shift_mix((a + g) * cityhash::K0) * cityhash::K0 + b;
+    a = city::shift_mix((a + g) * city::K0) * city::K0 + b;
     result[1] += a + result[0];
-    a = cityhash::shift_mix(a * cityhash::K0) * cityhash::K0 + c;
+    a = city::shift_mix(a * city::K0) * city::K0 + c;
     result[2] = a + result[1];
-    a = cityhash::shift_mix((a + e) * cityhash::K0) * cityhash::K0;
+    a = city::shift_mix((a + e) * city::K0) * city::K0;
     result[3] = a + result[2];
 }
 
 // Requires len < 240
-fn void city_hash_crc256_short(char* s, usz len, ulong* result)
+fn void hash256_crc_short(char* s, usz len, ulong* result)
 {
     char[240] buf;
     libc::memcpy(&buf, s, len);
     libc::memset(&buf[len], 0, 240 - len);
-    city_hash_crc256_long(&buf, 240, ~(uint)len, result);
+    hash256_crc_long(&buf, 240, ~(uint)len, result);
 }
 
-fn void city_hash_crc256(char* s, usz len, ulong* result)
+fn void hash256_crc(char* s, usz len, ulong* result)
 {
     if (len >= 240) {
-        city_hash_crc256_long(s, len, 0, result);
+        hash256_crc_long(s, len, 0, result);
     } else {
-        city_hash_crc256_short(s, len, result);
+        hash256_crc_short(s, len, result);
     }
 }
 
-fn uint128 city_hash_crc128_with_seed(char* s, usz len, uint128 seed)
+fn uint128 hash128_crc_with_seed(char* s, usz len, uint128 seed)
 {
     if (len <= 900) {
-        return cityhash::city_hash128_with_seed(s, len, seed);
+        return city::hash128_with_seed(s, len, seed);
     } else {
         ulong[4] result;
-        city_hash_crc256(s, len, &result);
-        ulong u = cityhash::uint128_high64!(seed) + result[0];
-        ulong v = cityhash::uint128_low64!(seed) + result[1];
-        ulong first = cityhash::hash_len16(u, v + result[2]);
-        ulong second = cityhash::hash_len16(cityhash::rotate(v, 32), u * cityhash::K0 + result[3]);
+        hash256_crc(s, len, &result);
+        ulong u = city::uint128_high64(seed) + result[0];
+        ulong v = city::uint128_low64(seed) + result[1];
+        ulong first = city::hash_len16(u, v + result[2]);
+        ulong second = city::hash_len16(city::rotate(v, 32), u * city::K0 + result[3]);
         return ((uint128)second << 64) | (uint128)first;
     }
 }
 
-fn uint128 city_hash_crc128(char* s, usz len)
+fn uint128 hash128_crc(char* s, usz len)
 {
     if (len <= 900) {
-        return cityhash::city_hash128(s, len);
+        return city::hash128(s, len);
     } else {
         ulong[4] result;
-        city_hash_crc256(s, len, &result);
+        hash256_crc(s, len, &result);
         return ((uint128)result[3] << 64) | (uint128)result[2];
     }
 }
-
-$else
-
-$endif

@@ -4,7 +4,7 @@
 
 module test;
 
-import cityhash;
+import city;
 import std::io;
 
 // Known test vectors from the original CityHash implementation
@@ -22,8 +22,8 @@ fn bool test_cityhash64()
     
     // Test empty string
     String empty = "";
-    ulong hash_empty = cityhash::CityHash64(empty.ptr, empty.len);
-    io::printfn("Empty string: 0x%016llx", hash_empty);
+    ulong hash_empty = city::hash64(empty.ptr, empty.len);
+    io::printfn("Empty string: 0x%016x", hash_empty);
     
     // Test short strings
     String[5] test_strings = {
@@ -36,16 +36,16 @@ fn bool test_cityhash64()
     
     for (int i = 0; i < test_strings.len; i++) {
         String s = test_strings[i];
-        ulong hash = cityhash::CityHash64(s.ptr, s.len);
-        io::printfn("'%s' -> 0x%016llx", s, hash);
+        ulong hash = city::hash64(s.ptr, s.len);
+        io::printfn("'%s' -> 0x%016x", s, hash);
     }
     
     // Test longer strings
-    String long_text = "The quick brown fox jumps over the lazy dog. " ++
-                       "Pack my box with five dozen liquor jugs. " ++
+    String long_text = "The quick brown fox jumps over the lazy dog. " 
+                       "Pack my box with five dozen liquor jugs. " 
                        "How vexingly quick daft zebras jump!";
-    ulong hash_long = cityhash::CityHash64(long_text.ptr, long_text.len);
-    io::printfn("Long text -> 0x%016llx", hash_long);
+    ulong hash_long = city::hash64(long_text.ptr, long_text.len);
+    io::printfn("Long text -> 0x%016x", hash_long);
     
     return all_passed;
 }
@@ -60,13 +60,13 @@ fn bool test_cityhash64_with_seed()
     ulong seed2 = 0xFFFFFFFFFFFFFFFF;
     ulong seed3 = 0x1234567890ABCDEF;
     
-    ulong hash1 = cityhash::CityHash64WithSeed(text.ptr, text.len, seed1);
-    ulong hash2 = cityhash::CityHash64WithSeed(text.ptr, text.len, seed2);
-    ulong hash3 = cityhash::CityHash64WithSeed(text.ptr, text.len, seed3);
+    ulong hash1 = city::hash64_with_seed(text.ptr, text.len, seed1);
+    ulong hash2 = city::hash64_with_seed(text.ptr, text.len, seed2);
+    ulong hash3 = city::hash64_with_seed(text.ptr, text.len, seed3);
     
-    io::printfn("'%s' with seed 0x%016llx -> 0x%016llx", text, seed1, hash1);
-    io::printfn("'%s' with seed 0x%016llx -> 0x%016llx", text, seed2, hash2);
-    io::printfn("'%s' with seed 0x%016llx -> 0x%016llx", text, seed3, hash3);
+    io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed1, hash1);
+    io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed2, hash2);
+    io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed3, hash3);
     
     // Different seeds should produce different hashes
     if (hash1 == hash2 || hash1 == hash3 || hash2 == hash3) {
@@ -93,14 +93,14 @@ fn bool test_cityhash128()
     
     for (int i = 0; i < test_strings.len; i++) {
         String s = test_strings[i];
-        uint128 hash = cityhash::CityHash128(s.ptr, s.len);
-        ulong low = cityhash::uint128_low64!(hash);
-        ulong high = cityhash::uint128_high64!(hash);
+        uint128 hash = city::hash128(s.ptr, s.len);
+        ulong low = city::uint128_low64(hash);
+        ulong high = city::uint128_high64(hash);
         
         if (s.len == 0) {
-            io::printfn("(empty) -> 0x%016llx%016llx", high, low);
+            io::printfn("(empty) -> 0x%016x%016x", high, low);
         } else {
-            io::printfn("'%s' -> 0x%016llx%016llx", s, high, low);
+            io::printfn("'%s' -> 0x%016x%016x", s, high, low);
         }
     }
     
@@ -128,7 +128,7 @@ fn bool test_collision_resistance()
     
     ulong[10] hashes;
     for (int i = 0; i < similar.len; i++) {
-        hashes[i] = cityhash::CityHash64(similar[i].ptr, similar[i].len);
+        hashes[i] = city::hash64(similar[i].ptr, similar[i].len);
     }
     
     // Check for collisions
@@ -136,7 +136,7 @@ fn bool test_collision_resistance()
     for (int i = 0; i < similar.len; i++) {
         for (int j = i + 1; j < similar.len; j++) {
             if (hashes[i] == hashes[j]) {
-                io::printfn("COLLISION: '%s' and '%s' -> 0x%016llx", 
+                io::printfn("COLLISION: '%s' and '%s' -> 0x%016x", 
                            similar[i], similar[j], hashes[i]);
                 collisions++;
                 all_passed = false;
@@ -161,17 +161,17 @@ fn bool test_consistency()
     String text = "consistency test";
     
     // Hash the same string multiple times
-    ulong hash1 = cityhash::CityHash64(text.ptr, text.len);
-    ulong hash2 = cityhash::CityHash64(text.ptr, text.len);
-    ulong hash3 = cityhash::CityHash64(text.ptr, text.len);
+    ulong hash1 = city::hash64(text.ptr, text.len);
+    ulong hash2 = city::hash64(text.ptr, text.len);
+    ulong hash3 = city::hash64(text.ptr, text.len);
     
     if (hash1 == hash2 && hash2 == hash3) {
-        io::printfn("✓ Hash is consistent: 0x%016llx", hash1);
+        io::printfn("✓ Hash is consistent: 0x%016x", hash1);
     } else {
         io::printfn("✗ Hash is NOT consistent!");
-        io::printfn("  hash1: 0x%016llx", hash1);
-        io::printfn("  hash2: 0x%016llx", hash2);
-        io::printfn("  hash3: 0x%016llx", hash3);
+        io::printfn("  hash1: 0x%016x", hash1);
+        io::printfn("  hash2: 0x%016x", hash2);
+        io::printfn("  hash3: 0x%016x", hash3);
         all_passed = false;
     }
     
@@ -193,8 +193,8 @@ fn bool test_length_sensitivity()
     
     ulong[4] hashes;
     for (int i = 0; i < variations.len; i++) {
-        hashes[i] = cityhash::CityHash64(variations[i].ptr, variations[i].len);
-        io::printfn("'%s' (len=%d) -> 0x%016llx", 
+        hashes[i] = city::hash64(variations[i].ptr, variations[i].len);
+        io::printfn("'%s' (len=%d) -> 0x%016x", 
                    variations[i], variations[i].len, hashes[i]);
     }
     
