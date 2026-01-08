@@ -15,7 +15,7 @@ struct TestVector
     uint128 expected_hash128;
 }
 
-fn bool test_cityhash64()
+fn void test_cityhash64() @test
 {
     io::printfn("\n=== Testing CityHash64 ===");
     bool all_passed = true;
@@ -47,39 +47,42 @@ fn bool test_cityhash64()
     ulong hash_long = city::hash64(long_text.ptr, long_text.len);
     io::printfn("Long text -> 0x%016x", hash_long);
     
-    return all_passed;
+    assert(all_passed);
 }
 
-fn bool test_cityhash64_with_seed()
-{
-    io::printfn("\n=== Testing CityHash64WithSeed ===");
-    bool all_passed = true;
+fn void test_cityhash64_with_seed() @test
+{ 
+    io::printfn("\n=== Testing CityHash64WithSeed ==="); bool all_passed = true;
     
-    String text = "test";
-    ulong seed1 = 0x0000000000000000;
-    ulong seed2 = 0xFFFFFFFFFFFFFFFF;
-    ulong seed3 = 0x1234567890ABCDEF;
+    String text = "test"; ulong seed1 =
+0x0000000000000000; ulong seed2 =
+0xFFFFFFFFFFFFFFFF; ulong seed3 =
+0x1234567890ABCDEF;
     
-    ulong hash1 = city::hash64_with_seed(text.ptr, text.len, seed1);
-    ulong hash2 = city::hash64_with_seed(text.ptr, text.len, seed2);
-    ulong hash3 = city::hash64_with_seed(text.ptr, text.len, seed3);
+    ulong hash1 =
+city::hash64_with_seed(text.ptr, text.len,
+seed1); ulong hash2 =
+city::hash64_with_seed(text.ptr, text.len,
+seed2); ulong hash3 =
+city::hash64_with_seed(text.ptr, text.len,
+seed3);
     
     io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed1, hash1);
-    io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed2, hash2);
-    io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed3, hash3);
+io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed2, hash2);
+io::printfn("'%s' with seed 0x%016x -> 0x%016x", text, seed3, hash3);
     
-    // Different seeds should produce different hashes
-    if (hash1 == hash2 || hash1 == hash3 || hash2 == hash3) {
-        io::printfn("WARNING: Different seeds produced same hash!");
-        all_passed = false;
-    } else {
-        io::printfn("✓ Different seeds produce different hashes");
-    }
+    // Different seeds should produce
+    // different hashes
+    if (hash1 == hash2 || hash1 == hash3 ||
+hash2 == hash3) { 
+         io::printfn("WARNING: Different seeds produced same hash!");
+all_passed = false; } else { 
+        io::printfn("✓ Different seeds produce different hashes"); }
     
-    return all_passed;
+    assert(all_passed);
 }
 
-fn bool test_cityhash128()
+fn void test_cityhash128() @test
 {
     io::printfn("\n=== Testing CityHash128 ===");
     bool all_passed = true;
@@ -104,10 +107,10 @@ fn bool test_cityhash128()
         }
     }
     
-    return all_passed;
+    assert(all_passed);
 }
 
-fn bool test_collision_resistance()
+fn void test_collision_resistance() @test
 {
     io::printfn("\n=== Testing Collision Resistance ===");
     bool all_passed = true;
@@ -150,10 +153,10 @@ fn bool test_collision_resistance()
         io::printfn("✗ Found %d collision(s)", collisions);
     }
     
-    return all_passed;
+    assert(all_passed);
 }
 
-fn bool test_consistency()
+fn void test_consistency() @test
 {
     io::printfn("\n=== Testing Hash Consistency ===");
     bool all_passed = true;
@@ -174,11 +177,10 @@ fn bool test_consistency()
         io::printfn("  hash3: 0x%016x", hash3);
         all_passed = false;
     }
-    
-    return all_passed;
+    assert(all_passed);
 }
 
-fn bool test_length_sensitivity()
+fn void test_length_sensitivity() @test
 {
     io::printfn("\n=== Testing Length Sensitivity ===");
     bool all_passed = true;
@@ -212,10 +214,10 @@ fn bool test_length_sensitivity()
     if (all_passed) {
         io::printfn("✓ Different lengths produce different hashes");
     }
-    
-    return all_passed;
+    assert(all_passed);
 }
 
+/*
 fn void main()
 {
     io::printfn("========================================");
@@ -239,3 +241,4 @@ fn void main()
     }
     io::printfn("========================================");
 }
+*/
