@@ -1,13 +1,19 @@
+
 {
-  "provides": "cityhash",
-  "version": "1.0.0",
-  "authors": ["Nomota Hiongun KIM"],
   "langrev": "1",
-  "warnings": ["no-unused"],
+  "warnings":  [ "no-unused" ],
+  "dependency-search-paths":  [ "lib" ],
+  "dependencies":  [  ],
+  "authors":  [ "Nomota Hiongun Kim <hiongun@gmail.com>" ],
+  "version": "0.1.0",
+  "sources":  [ "src/**" ],
+  "test-sources":  [ "test/**" ],
+  "output": "build",
   "targets": {
-    "cityhash": {
-      "type": "static-lib"
+    "example": {
+      "type": "executable"
     }
   },
-  "dependencies": {}
+  "cpu": "generic",
+  "opt": "O2"
 }
