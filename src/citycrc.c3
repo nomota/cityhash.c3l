@@ -28,23 +28,6 @@ fn ulong _mm_crc32_u64(ulong crc, ulong val)
   return result;
 }
 
-/*
-fn ulong _mm_crc32_u64(ulong crc, ulong val) 
-  @if($defined(env::SSE4_2)) @inline
-{
-  io::printfn("SSE4_2 _mm_crc32_u64() not properly implemented");
-  // todo:
-  // how to transfer parameter and fetch return val????
-  asm {
-  // CRC32 r64, r/m64
-  // ; rax: crc val store, rbx: data store
-  // crc32  rax, rbx  ; rax = crc32(rax, rbx)
-  // crc32 rax, QWORD PTR [rdx]  ; fetch 8 bytes from rdx address and compute CRC
-  }
-  return 0;
-}
-*/
-
 fn ulong _mm_crc32_u64(ulong crc, ulong data)
   @if(! $defined(env::SSE4_2)) @inline
 {
