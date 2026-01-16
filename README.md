@@ -55,7 +55,6 @@ The C3 implementation includes several modernizations:
 3. **Conditional Compilation**: Uses C3's compile-time conditionals (`@if`)
 4. **Improved Macros**: Uses C3's macro system instead of C preprocessor
 5. **Native uint128**: Uses C3's built-in `uint128` type
-6. **Better Error Handling**: Cleaner error handling for unsupported features
 
 ## API Functions
 
